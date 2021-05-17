@@ -1,37 +1,78 @@
+let commands = [{
+    name: "allowvpn",
+    description: "allow vpn user",
+    alias: "av",
+    permission: "SeniorAdmin",
+    targetRequired: true,
+    arguments: [{
+        name: "clientname/@clientid",
+        required: true
+    }],
+    execute: (gameEvent) => {
+        var allowedVpns = [];
+        var db_players = gameEvent.Owner.Manager.GetClientService().FindClientsByIdentifier(gameEvent.Data);
+        plugin.configHandler.GetValue("AllowedVPNUsers").forEach((element) => {
+            allowedVpns.push(element);
+        });
+        if (db_players) {
+            if (!allowedVpns.includes(gameEvent.Target.ClientId)) {
+                allowedVpns.push(gameEvent.Target.ClientId);
+                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpns);
+                gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been added to AllowedVPNUsers list");
+            }else{
+                gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") already on AllowedVPNUsers list");
+            }
+        }
+    }
+},
+{
+    name: "denyvpn",
+    description: "deny vpn user",
+    alias: "dv",
+    permission: "SeniorAdmin",
+    targetRequired: true,
+    arguments: [{
+        name: "clientname/@clientid",
+        required: true
+    }],
+    execute: (gameEvent) => {
+        var allowedVpns = [];
+        var db_players = gameEvent.Owner.Manager.GetClientService().FindClientsByIdentifier(gameEvent.Data);
+        plugin.configHandler.GetValue("AllowedVPNUsers").forEach((element) => {
+            allowedVpns.push(element);
+        });
+        if (db_players) {
+            if (allowedVpns.includes(gameEvent.Target.ClientId)) {
+                for( var i = 0; i < allowedVpns.length; i++){
+                    if ( allowedVpns[i] === gameEvent.Target.ClientId) {
+                        allowedVpns.splice(i, 1);
+                    }
+                }
+                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpns);
+                gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been deleted from AllowedVPNUsers list");
+            }else{
+                gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") not in AllowedVPNUsers list");
+            }
+        }
+    }
+}];
 var plugin = {
     author: 'Zwambro',
-    version: 1.0,
-    name: 'VPN Detection Plugin',
+    version: 1.1,
+    name: 'VPNDetection',
 
-    // enable or disable the plugin, to disable it turn true to false.
-    enabled: true,
-
-    // Contact me on discord Zwambro#8854 to get the token.
-    zwambroapi: "",
-    //Visit www.proxycheck.io and create an account to get your API token.
-    proxycheckapi : "",
-
-    //If player connections less than maxConnections value will be infected by the plugin.
-    maxConnections: 200,
-
-    // Ranks less than maxLevel value will be infected by the plugin.
-    maxLevel: { 'trusted': 2 },
-
+    configHandler: null,
     manager: null,
     logger: null,
-
-    vpnExceptionIds: [],
-
 
     checkZwanbroDb: function (origin) {
 
         this.logger.WriteInfo('Checking Zwambro DB');
 
         var usingVPN = false;
-
         try {
             var cl = new System.Net.Http.HttpClient();
-            cl.DefaultRequestHeaders.Add("Authorization", "Token " + this.zwambroapi);
+            cl.DefaultRequestHeaders.Add("Authorization", "Token " + this.getZwambroApiConf());
             var re = cl.GetAsync("https://zwambro.pw/antivpn/checkvpn?ip=" + origin.IPAddressString).Result;
             var co = re.Content;
             var parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
@@ -79,7 +120,7 @@ var plugin = {
 
         try {
             var cl2 = new System.Net.Http.HttpClient();
-            var re2 = cl2.GetAsync('http://proxycheck.io/v2/' + origin.IPAddressString + '?key=' + this.proxycheckapi + '&vpn=1').Result;
+            var re2 = cl2.GetAsync('http://proxycheck.io/v2/' + origin.IPAddressString + '?key=' + this.getProxycheckApiConf() + '&vpn=1').Result;
             var co2 = re2.Content;
             var parsedJSON2 = JSON.parse(co2.ReadAsStringAsync().Result);
             co2.Dispose();
@@ -119,15 +160,16 @@ var plugin = {
             this.logger.WriteWarning('There was a problem checking client IP on ip-api.com ' + e.message);
         }
     },
-
     addVpnToDb: function (origin) {
 
         var output = false;
 
         try {
             var client1 = new System.Net.Http.HttpClient();
-            var data = {"ip": origin.IPAddressString};
-            client1.DefaultRequestHeaders.add("Authorization", "Token " + this.zwambroapi);
+            var data = {
+                "ip": origin.IPAddressString
+            };
+            client1.DefaultRequestHeaders.add("Authorization", "Token " + this.getZwambroApiConf());
             var result1 = client1.PostAsync("https://zwambro.pw/antivpn/addvpn", new System.Net.Http.StringContent(JSON.stringify(data), System.Text.Encoding.UTF8, "application/json")).Result;
             var resCl1 = result1.Content;
             var toJson1 = JSON.parse(resCl1.ReadAsStringAsync().Result);
@@ -135,57 +177,78 @@ var plugin = {
             result1.Dispose();
             client1.Dispose();
             output = toJson1.banned;
-            if(output) {
+            if (output) {
                 return true;
             }
         } catch (e) {
             this.logger.WriteWarning('There was a problem adding this IP to ZwambroDB: ' + e.message);
         }
     },
-
-    onEventAsync: function (gameEvent, server) {
-
-        if (!this.enabled) {
-            return;
+    getZwambroApiConf: function () {
+        var zwambroApiValue = this.configHandler.GetValue("ZwambroAPI");
+        if (!zwambroApiValue) {
+            this.configHandler.SetValue("ZwambroAPI", "PASTZWAMBROAPIHERE");
         }
+        return zwambroApiValue;
+    },
+    getProxycheckApiConf: function () {
+        var proxychekApiValue = this.configHandler.GetValue("ProxycheckAPI");
+        if (!proxychekApiValue) {
+            this.configHandler.SetValue("ProxycheckAPI", "PASTPROXYCHECKAPIHERE");
+        }
+        return proxychekApiValue;
+    },
+    getMaxlevelConf: function () {
+        var maxLevelValue = this.configHandler.GetValue("MaxLevel");
+        if (!maxLevelValue) {
+            this.configHandler.SetValue("MaxLevel", 2);
+        }
+        return maxLevelValue;
+    },
+    getMaxConnectionsConf: function () {
+        var maxConnectionsValue = this.configHandler.GetValue("MaxConnections");
+        if (!maxConnectionsValue) {
+            this.configHandler.SetValue("MaxConnections", 200);
+        }
+        return maxConnectionsValue;
+    },
+    onEventAsync: function (gameEvent, server) {
 
         if (gameEvent.Type === 4) {
             var exempt = false;
-            this.vpnExceptionIds.forEach(function (id) {
+            this.configHandler.GetValue("AllowedVPNUsers").forEach(function (id) {
                 if (id === gameEvent.Origin.ClientId) {
                     exempt = true;
                     return false;
                 }
             });
 
-            if (!gameEvent.Origin.IsIngame || gameEvent.Origin.Level >= this.maxLevel['trusted'] || gameEvent.Origin.Connections > this.maxConnections) {
+            if (!gameEvent.Origin.IsIngame || gameEvent.Origin.Level >= this.getMaxlevelConf() || gameEvent.Origin.Connections > this.getMaxConnectionsConf()) {
                 server.Logger.WriteInfo('Ignoring check for client ' + gameEvent.Origin.Name);
                 return;
-            }
-            else if (exempt) {
-                server.Logger.WriteInfo('This id @' + gameEvent.Origin.ClientId + 'on vpnExceptionIds list');
+            } else if (exempt) {
+                server.Logger.WriteInfo('This id @' + gameEvent.Origin.ClientId + ' on AllowedVPNUsers list');
                 return;
-            }
-            else {
+            } else {
                 this.logger.WriteInfo(gameEvent.Origin.Name + ' (' + gameEvent.Origin.IPAddressString + ') will be checked now');
                 if (this.checkZwanbroDb(gameEvent.Origin)) {
                     this.logger.WriteInfo('' + gameEvent.Origin.Name + '(' + gameEvent.Origin.IPAddressString + ') is using a VPN');
                     gameEvent.Origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
                     return;
 
-                } else if (this.checkXdefconDb(gameEvent.Origin)){
+                } else if (this.checkXdefconDb(gameEvent.Origin)) {
                     this.addVpnToDb(gameEvent.Origin);
                     this.logger.WriteInfo('' + gameEvent.Origin.Name + '(' + gameEvent.Origin.IPAddressString + ') is using a VPN');
                     gameEvent.Origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
                     return;
 
-                } else if (this.checkProxycheckDb(gameEvent.Origin)){
+                } else if (this.checkProxycheckDb(gameEvent.Origin)) {
                     this.addVpnToDb(gameEvent.Origin);
                     this.logger.WriteInfo('' + gameEvent.Origin.Name + '(' + gameEvent.Origin.IPAddressString + ') is using a VPN');
                     gameEvent.Origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
                     return;
 
-                } else if (this.checkIpComDb(gameEvent.Origin)){
+                } else if (this.checkIpComDb(gameEvent.Origin)) {
                     this.addVpnToDb(gameEvent.Origin);
                     this.logger.WriteInfo('' + gameEvent.Origin.Name + '(' + gameEvent.Origin.IPAddressString + ') is using a VPN');
                     gameEvent.Origin.Kick(_localization.LocalizationIndex["SERVER_KICK_VPNS_NOTALLOWED"], _IW4MAdminClient);
@@ -201,11 +264,36 @@ var plugin = {
     onLoadAsync: function (manager) {
         this.manager = manager;
         this.logger = manager.GetLogger(0);
+        this.configHandler = _configHandler;
+        plugin.configHandler = _configHandler;
+
+        this.configHandler.SetValue("Author", this.author);
+        this.configHandler.SetValue("Version", this.version);
+
+        var zwambroApi = this.configHandler.GetValue("ZwambroAPI");
+        var proxyCheckApi = this.configHandler.GetValue("ProxycheckAPI");
+        var AllowedMaxLevel = this.configHandler.GetValue("MaxLevel");
+        var AllowedMaxConnections = this.configHandler.GetValue("MaxConnections");
+        var AllowedVPNUsers = this.configHandler.GetValue("AllowedVPNUsers");
+
+        if (!zwambroApi) {
+            this.configHandler.SetValue("ZwambroAPI", "PASTZWAMBROAPIHERE");
+        }
+        if (!proxyCheckApi) {
+            this.configHandler.SetValue("ProxycheckAPI", "PASTPROXYCHECKAPIHERE");
+        }
+        if (!AllowedMaxLevel) {
+            this.configHandler.SetValue("MaxLevel", 2);
+        }
+        if (!AllowedMaxConnections) {
+            this.configHandler.SetValue("MaxConnections", 200);
+        }
+        if (!AllowedVPNUsers) {
+            this.configHandler.SetValue("AllowedVPNUsers", []);
+        }
     },
 
-    onUnloadAsync: function () {
-    },
+    onUnloadAsync: function () {},
 
-    onTickAsync: function (server) {
-    }
+    onTickAsync: function (server) {}
 };
