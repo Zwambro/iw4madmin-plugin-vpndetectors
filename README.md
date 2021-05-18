@@ -37,7 +37,7 @@ Updated version of IW4MAdmin default plugin "VPNDetection", This updated version
   ```
 6. Replace `PASTZWAMBROAPIHERE` with **Zwambro API** token. 
 7. Replace `PASTPROXYCHECKAPIHERE` with your **proxycheck** token.
-8. Change **MaxLevel** value if you want:
+8. Change **MaxLevel** value if you want, this levels number:
    ```
    User = 0,
    Flagged = 1,
