@@ -1,4 +1,4 @@
-# IW4MAdmin [![GitHub license](https://img.shields.io/github/license/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/blob/2.4-pr/LICENSE) [![GitHub stars](https://img.shields.io/github/stars/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/stargazers)  
+# IW4MAdmin [![GitHub license](https://img.shields.io/github/license/RaidMax/IW4M-Admin)](https://github.com/Zwambro/iw4madmin-plugin-iw4todiscord/blob/master/LICENSE) [![GitHub stars](https://img.shields.io/github/stars/RaidMax/IW4M-Admin)](https://github.com/RaidMax/IW4M-Admin/stargazers)  
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J821KUJ)
 
 
@@ -19,7 +19,7 @@ Updated version of IW4MAdmin default plugin "VPNDetection", This updated version
 - `!denyvpn playername/@playerd`
 
 ## Installation
-1. **Merge** this plugin with default one.
+1. **Merge** this plugin with default one (take a backup of this plugin first).
 2. Restart IW4MAdmin.
 3. Go to [proxycheck.io](https://proxycheck.io/) and get free or paid token.
 4. To use zwambro DB you may need authentication token (contact me on discord `Zwambro#8854` to create an token for your clan).
