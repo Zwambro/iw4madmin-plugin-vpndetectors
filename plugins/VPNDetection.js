@@ -292,9 +292,9 @@ var plugin = {
 
         var zwambroApi = this.configHandler.GetValue("ZwambroAPI");
         var proxyCheckApi = this.configHandler.GetValue("ProxycheckAPI");
-        var AllowedMaxLevel = this.configHandler.GetValue("MaxLevel");
-        var AllowedMaxConnections = this.configHandler.GetValue("MaxConnections");
-        var AllowedVPNUsers = this.configHandler.GetValue("AllowedVPNUsers");
+        var allowedMaxLevel = this.configHandler.GetValue("MaxLevel");
+        var allowedMaxConnections = this.configHandler.GetValue("MaxConnections");
+        var allowedVPNUsers = this.configHandler.GetValue("AllowedVPNUsers");
 
         if (!zwambroApi) {
             this.configHandler.SetValue("ZwambroAPI", "PASTZWAMBROAPIHERE");
@@ -302,13 +302,13 @@ var plugin = {
         if (!proxyCheckApi) {
             this.configHandler.SetValue("ProxycheckAPI", "PASTPROXYCHECKAPIHERE");
         }
-        if (!AllowedMaxLevel) {
+        if (!allowedMaxLevel) {
             this.configHandler.SetValue("MaxLevel", 2);
         }
-        if (!AllowedMaxConnections) {
+        if (!allowedMaxConnections) {
             this.configHandler.SetValue("MaxConnections", 200);
         }
-        if (!AllowedVPNUsers) {
+        if (!allowedVPNUsers) {
             this.configHandler.SetValue("AllowedVPNUsers", []);
         }
     },
