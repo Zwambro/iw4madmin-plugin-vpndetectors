@@ -18,7 +18,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-let commands = [{
+let allowedVpnsIds = [];
+
+const commands = [{
     name: "allowvpn",
     description: "allow vpn user",
     alias: "av",
@@ -29,15 +31,11 @@ let commands = [{
         required: true
     }],
     execute: (gameEvent) => {
-        var allowedVpns = [];
         var db_players = gameEvent.Owner.Manager.GetClientService().FindClientsByIdentifier(gameEvent.Data);
-        plugin.configHandler.GetValue("AllowedVPNUsers").forEach((element) => {
-            allowedVpns.push(element);
-        });
         if (db_players) {
-            if (!allowedVpns.includes(gameEvent.Target.ClientId)) {
-                allowedVpns.push(gameEvent.Target.ClientId);
-                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpns);
+            if (!allowedVpnsIds.includes(gameEvent.Target.ClientId)) {
+                allowedVpnsIds.push(gameEvent.Target.ClientId);
+                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been added to AllowedVPNUsers list");
             }else{
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") already on AllowedVPNUsers list");
@@ -56,19 +54,15 @@ let commands = [{
         required: true
     }],
     execute: (gameEvent) => {
-        var allowedVpns = [];
         var db_players = gameEvent.Owner.Manager.GetClientService().FindClientsByIdentifier(gameEvent.Data);
-        plugin.configHandler.GetValue("AllowedVPNUsers").forEach((element) => {
-            allowedVpns.push(element);
-        });
         if (db_players) {
-            if (allowedVpns.includes(gameEvent.Target.ClientId)) {
-                for( var i = 0; i < allowedVpns.length; i++){
-                    if ( allowedVpns[i] === gameEvent.Target.ClientId) {
-                        allowedVpns.splice(i, 1);
+            if (allowedVpnsIds.includes(gameEvent.Target.ClientId)) {
+                for( var i = 0; i < allowedVpnsIds.length; i++){
+                    if ( allowedVpnsIds[i] === gameEvent.Target.ClientId) {
+                        allowedVpnsIds.splice(i, 1);
                     }
                 }
-                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpns);
+                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been deleted from AllowedVPNUsers list");
             }else{
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") not in AllowedVPNUsers list");
@@ -76,9 +70,9 @@ let commands = [{
         }
     }
 }];
-var plugin = {
+const plugin = {
     author: 'Zwambro',
-    version: 1.1,
+    version: 1.2,
     name: 'VPNDetection',
 
     configHandler: null,
@@ -285,7 +279,6 @@ var plugin = {
         this.manager = manager;
         this.logger = manager.GetLogger(0);
         this.configHandler = _configHandler;
-        plugin.configHandler = _configHandler;
 
         this.configHandler.SetValue("Author", this.author);
         this.configHandler.SetValue("Version", this.version);
@@ -294,7 +287,7 @@ var plugin = {
         var proxyCheckApi = this.configHandler.GetValue("ProxycheckAPI");
         var allowedMaxLevel = this.configHandler.GetValue("MaxLevel");
         var allowedMaxConnections = this.configHandler.GetValue("MaxConnections");
-        var allowedVPNUsers = this.configHandler.GetValue("AllowedVPNUsers");
+        var allowedVPNUsers = this.configHandler.GetValue('AllowedVPNUsers').forEach(element => allowedVpnsIds.push(element));
 
         if (!zwambroApi) {
             this.configHandler.SetValue("ZwambroAPI", "PASTZWAMBROAPIHERE");
