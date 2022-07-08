@@ -28,15 +28,15 @@ Updated version of IW4MAdmin default plugin "VPNDetection", This updated version
   "VPNDetection": {
     "Author": "Zwambro",
     "Version": 1.1,
-    "ZwambroAPI": "PASTZWAMBROAPIHERE",
-    "ProxycheckAPI": "PASTPROXYCHECKAPIHERE",
+    "ZwambroAPI": "PAST_ZWAMBRO_API_HERE",
+    "ProxycheckAPI": "PAST_PROXYCHECK_API_HERE",
     "MaxLevel": 2,
     "MaxConnections": 200,
     "AllowedVPNUsers": []
   }
   ```
-6. Replace `PASTZWAMBROAPIHERE` with **Zwambro API** token. 
-7. Replace `PASTPROXYCHECKAPIHERE` with your **proxycheck** token.
+6. Replace `PAST_ZWAMBRO_API_HERE` with **Zwambro API** token. 
+7. Replace `PAST_PROXYCHECK_API_HERE` with your **proxycheck** token.
 8. Change **MaxLevel** value if you want, this levels number:
    ```
    User = 0,

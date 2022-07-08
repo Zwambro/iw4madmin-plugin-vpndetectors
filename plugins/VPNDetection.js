@@ -35,7 +35,7 @@ const commands = [{
         if (db_players) {
             if (!allowedVpnsIds.includes(gameEvent.Target.ClientId)) {
                 allowedVpnsIds.push(gameEvent.Target.ClientId);
-                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
+                _configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been added to AllowedVPNUsers list");
             }else{
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") already on AllowedVPNUsers list");
@@ -62,7 +62,7 @@ const commands = [{
                         allowedVpnsIds.splice(i, 1);
                     }
                 }
-                plugin.configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
+                _configHandler.SetValue("AllowedVPNUsers", allowedVpnsIds);
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") has been deleted from AllowedVPNUsers list");
             }else{
                 gameEvent.Origin.Tell("This ID (@" + gameEvent.Target.ClientId + ") not in AllowedVPNUsers list");
@@ -72,7 +72,7 @@ const commands = [{
 }];
 const plugin = {
     author: 'Zwambro',
-    version: 1.3,
+    version: 1.4,
     name: 'VPNDetection',
 
     configHandler: null,
@@ -86,7 +86,7 @@ const plugin = {
         var usingVPN = false;
         try {
             var cl = new System.Net.Http.HttpClient();
-            cl.DefaultRequestHeaders.Add("Authorization", "Token " + this.getZwambroApiConf());
+            cl.DefaultRequestHeaders.Add("Authorization", "Token " + this.configHandler.GetValue("ZwambroAPI"));
             var re = cl.GetAsync("https://zwambro.pw/antivpn/checkvpn?ip=" + origin.IPAddressString).Result;
             var co = re.Content;
             var parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
@@ -134,7 +134,7 @@ const plugin = {
 
         try {
             var cl2 = new System.Net.Http.HttpClient();
-            var re2 = cl2.GetAsync('http://proxycheck.io/v2/' + origin.IPAddressString + '?key=' + this.getProxycheckApiConf() + '&vpn=1').Result;
+            var re2 = cl2.GetAsync('http://proxycheck.io/v2/' + origin.IPAddressString + '?key=' + this.configHandler.GetValue("ProxycheckAPI") + '&vpn=1').Result;
             var co2 = re2.Content;
             var parsedJSON2 = JSON.parse(co2.ReadAsStringAsync().Result);
             co2.Dispose();
@@ -183,7 +183,7 @@ const plugin = {
             var data = {
                 "ip": origin.IPAddressString
             };
-            client1.DefaultRequestHeaders.add("Authorization", "Token " + this.getZwambroApiConf());
+            client1.DefaultRequestHeaders.add("Authorization", "Token " + this.configHandler.GetValue("ZwambroAPI"));
             var result1 = client1.PostAsync("https://zwambro.pw/antivpn/addvpn", new System.Net.Http.StringContent(JSON.stringify(data), System.Text.Encoding.UTF8, "application/json")).Result;
             var resCl1 = result1.Content;
             var toJson1 = JSON.parse(resCl1.ReadAsStringAsync().Result);
@@ -198,37 +198,9 @@ const plugin = {
             this.logger.WriteWarning('There was a problem adding this IP to ZwambroDB: ' + e.message);
         }
     },
-    getZwambroApiConf: function () {
-        var zwambroApiValue = this.configHandler.GetValue("ZwambroAPI");
-        if (!zwambroApiValue) {
-            this.configHandler.SetValue("ZwambroAPI", "PAST_ZWAMBRO_API_HERE");
-        }
-        return zwambroApiValue;
-    },
-    getProxycheckApiConf: function () {
-        var proxychekApiValue = this.configHandler.GetValue("ProxycheckAPI");
-        if (!proxychekApiValue) {
-            this.configHandler.SetValue("ProxycheckAPI", "PAST_PROXYCHECK_API_HERE");
-        }
-        return proxychekApiValue;
-    },
-    getMaxlevelConf: function () {
-        var maxLevelValue = this.configHandler.GetValue("MaxLevel");
-        if (!maxLevelValue) {
-            this.configHandler.SetValue("MaxLevel", 2);
-        }
-        return maxLevelValue;
-    },
-    getMaxConnectionsConf: function () {
-        var maxConnectionsValue = this.configHandler.GetValue("MaxConnections");
-        if (!maxConnectionsValue) {
-            this.configHandler.SetValue("MaxConnections", 200);
-        }
-        return maxConnectionsValue;
-    },
     onEventAsync: function (gameEvent, server) {
 
-        if (gameEvent.Type === 4) {
+        if (gameEvent.TypeName === 'Join') {
             var exempt = false;
             allowedVpnsIds.forEach(function (id) {
                 if (id == gameEvent.Origin.ClientId) {
@@ -237,7 +209,7 @@ const plugin = {
                 }
             });
 
-            if (!gameEvent.Origin.IsIngame || gameEvent.Origin.Level >= this.configHandler.GetValue("MaxLevel") || gameEvent.Origin.Connections > this.configHandler.GetValue("MaxConnections")) {
+            if (!gameEvent.Origin.IsIngame || (gameEvent.Origin.LevelInt >= this.configHandler.GetValue("MaxLevel")) || (gameEvent.Origin.Connections > this.configHandler.GetValue("MaxConnections"))) {
                 server.Logger.WriteInfo('Ignoring check for client ' + gameEvent.Origin.Name);
                 return;
             } else if (exempt) {
@@ -279,33 +251,44 @@ const plugin = {
         this.manager = manager;
         this.logger = manager.GetLogger(0);
         this.configHandler = _configHandler;
+        this.allowedVpnsIds = [];
 
         this.configHandler.SetValue("Author", this.author);
         this.configHandler.SetValue("Version", this.version);
 
-        var zwambroApi = this.configHandler.GetValue("ZwambroAPI");
-        var proxyCheckApi = this.configHandler.GetValue("ProxycheckAPI");
-        var allowedMaxLevel = this.configHandler.GetValue("MaxLevel");
-        var allowedMaxConnections = this.configHandler.GetValue("MaxConnections");
-        this.configHandler.GetValue("AllowedVPNUsers").forEach(element => allowedVpnsIds.push(element));
 
-        if (!zwambroApi) {
-            this.configHandler.SetValue("ZwambroAPI", "PAST_ZWAMBRO_API_HERE");
+        zwambroApiConf = this.configHandler.GetValue("ZwambroAPI");
+        proxycheckApiConf = this.configHandler.GetValue("ProxycheckAPI");
+        maxlevelConf = this.configHandler.GetValue("MaxLevel");
+        maxConnectionsConf = this.configHandler.GetValue("MaxConnections");
+
+        const whiteList = this.configHandler.GetValue('AllowedVPNUsers');
+        if (whiteList !== undefined) {
+            whiteList.forEach(element => {
+                const pk = (element);
+                allowedVpnsIds.push(pk)
+            });
+        } else {
+            this.configHandler.SetValue('AllowedVPNUsers', []);
         }
-        if (!proxyCheckApi) {
-            this.configHandler.SetValue("ProxycheckAPI", "PAST_PROXYCHECK_API_HERE");
+        if (zwambroApiConf === undefined) {
+            this.configHandler.SetValue("ZwambroAPI", 'PAST_ZWAMBRO_API_HERE');
         }
-        if (!allowedMaxLevel) {
+        if (proxycheckApiConf === undefined) {
+            this.configHandler.SetValue("ProxycheckAPI", 'PAST_PROXYCHECK_API_HERE');
+        }
+        if (maxlevelConf === undefined) {
             this.configHandler.SetValue("MaxLevel", 2);
         }
-        if (!allowedMaxConnections) {
+        if (maxConnectionsConf === undefined) {
             this.configHandler.SetValue("MaxConnections", 200);
         }
+        this.logger.WriteInfo(`Loaded VPNBlocker (${this.version}) by Zwambro`);
     },
 
-    onUnloadAsync: function () {
+    onUnloadAsync: () => {
     },
 
-    onTickAsync: function (server) {
+    onTickAsync: server => {
     }
 };
