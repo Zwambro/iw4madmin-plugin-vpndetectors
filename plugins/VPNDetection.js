@@ -72,7 +72,7 @@ const commands = [{
 }];
 const plugin = {
     author: 'Zwambro',
-    version: 1.4,
+    version: 1.41,
     name: 'VPNDetection',
 
     configHandler: null,
@@ -257,10 +257,10 @@ const plugin = {
         this.configHandler.SetValue("Version", this.version);
 
 
-        zwambroApiConf = this.configHandler.GetValue("ZwambroAPI");
-        proxycheckApiConf = this.configHandler.GetValue("ProxycheckAPI");
-        maxlevelConf = this.configHandler.GetValue("MaxLevel");
-        maxConnectionsConf = this.configHandler.GetValue("MaxConnections");
+        var zwambroApiConf = this.configHandler.GetValue("ZwambroAPI");
+        var proxycheckApiConf = this.configHandler.GetValue("ProxycheckAPI");
+        var maxlevelConf = this.configHandler.GetValue("MaxLevel");
+        var maxConnectionsConf = this.configHandler.GetValue("MaxConnections");
 
         const whiteList = this.configHandler.GetValue('AllowedVPNUsers');
         if (whiteList !== undefined) {
